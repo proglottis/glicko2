@@ -63,26 +63,20 @@ module Glicko2
       f_part1(x, d, v) - f_part2(x)
     end
 
-    def generate_next(others, scores)
-      if others.length < 1
-        sd_pre = Math.sqrt(sd ** 2 + volatility ** 2)
-        return self.class.new(mean, sd_pre, volatility, obj) if others.length < 1
-      end
-      _v = variance(others)
-      _d = delta(others, scores)
+    def volatility1(d, v)
       a = Math::log(volatility ** 2)
-      if _d > sd ** 2 + _v
-        b = Math.log(_delta - sd ** 2 - _v)
+      if d > sd ** 2 + v
+        b = Math.log(d - sd ** 2 - v)
       else
         k = 1
-        k += 1 while f(a - k * VOLATILITY_CHANGE, _d, _v) < 0
+        k += 1 while f(a - k * VOLATILITY_CHANGE, d, v) < 0
         b = a - k * VOLATILITY_CHANGE
       end
-      fa = f(a, _d, _v)
-      fb = f(b, _d, _v)
+      fa = f(a, d, v)
+      fb = f(b, d, v)
       while (b - a).abs > TOLERANCE
         c = a + (a - b) * fa / (fb - fa)
-        fc = f(c, _d, _v)
+        fc = f(c, d, v)
         if fc * fb < 0
           a = b
           fa = fb
@@ -92,11 +86,21 @@ module Glicko2
         b = c
         fb = fc
       end
-      volatility1 = Math.exp(a / 2.0)
-      sd_pre = Math.sqrt(sd ** 2 + volatility1 ** 2)
-      sd1 = 1 / Math.sqrt(1 / sd_pre ** 2 + 1 / _v)
-      mean1 = mean + sd1 ** 2 * others.zip(scores).reduce(0) {|x, (other, score)| x + other.g * (score - e(other)) }
-      self.class.new(mean1, sd1, volatility1, obj)
+      Math.exp(a / 2.0)
+    end
+
+    def generate_next(others, scores)
+      if others.length < 1
+        sd_pre = Math.sqrt(sd ** 2 + volatility ** 2)
+        return self.class.new(mean, sd_pre, volatility, obj) if others.length < 1
+      end
+      _v = variance(others)
+      _d = delta(others, scores)
+      _volatility = volatility1(_d, _v)
+      sd_pre = Math.sqrt(sd ** 2 + _volatility ** 2)
+      _sd = 1 / Math.sqrt(1 / sd_pre ** 2 + 1 / _v)
+      _mean = mean + _sd ** 2 * others.zip(scores).reduce(0) {|x, (other, score)| x + other.g * (score - e(other)) }
+      self.class.new(_mean, _sd, _volatility, obj)
     end
 
     def update_obj
