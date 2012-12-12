@@ -25,6 +25,7 @@ module Glicko2
       @sd = sd
       @volatility = volatility
       @obj = obj
+      @e = {}
     end
 
     def g
@@ -32,7 +33,7 @@ module Glicko2
     end
 
     def e(other)
-      1 / (1 + Math.exp(-other.g * (mean - other.mean)))
+      @e[other] ||= 1 / (1 + Math.exp(-other.g * (mean - other.mean)))
     end
 
     def variance(others)
@@ -53,15 +54,15 @@ module Glicko2
       sd_sq = sd ** 2
       (exp_x * (d ** 2 - sd_sq - v - exp_x)) / (2 * (sd_sq + v + exp_x) ** 2)
     end
- 
+
     def f_part2(x)
       (x - Math::log(volatility ** 2)) / VOLATILITY_CHANGE ** 2
     end
- 
+
     def f(x, d, v)
       f_part1(x, d, v) - f_part2(x)
     end
- 
+
     def generate_next(others, scores)
       if others.length < 1
         sd_pre = Math.sqrt(sd ** 2 + volatility ** 2)
