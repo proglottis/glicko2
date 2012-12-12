@@ -36,6 +36,7 @@ module Glicko2
     end
 
     def variance(others)
+      return 0.0 if others.length < 1
       others.reduce(0) do |v, other|
         v + other.g ** 2 * e(other) * (1 - e(other))
       end ** -1
@@ -63,6 +64,10 @@ module Glicko2
     end
  
     def generate_next(others, scores)
+      if others.length < 1
+        sd_pre = Math.sqrt(sd ** 2 + volatility ** 2)
+        return self.class.new(mean, sd_pre, volatility, obj) if others.length < 1
+      end
       _v = variance(others)
       a = Math::log(volatility ** 2)
       if delta(others, scores) > sd ** 2 + _v
@@ -86,11 +91,11 @@ module Glicko2
         b = c
         fb = fc
       end
-      o1 = Math.exp(a / 2.0)
-      sd_pre = Math.sqrt(sd ** 2 + o1 ** 2)
+      volatility1 = Math.exp(a / 2.0)
+      sd_pre = Math.sqrt(sd ** 2 + volatility1 ** 2)
       sd1 = 1 / Math.sqrt(1 / sd_pre ** 2 + 1 / _v)
       mean1 = mean + sd1 ** 2 * others.zip(scores).reduce(0) {|x, (other, score)| x + other.g * (score - e(other)) }
-      self.class.new(mean1, sd1, o1, obj)
+      self.class.new(mean1, sd1, volatility1, obj)
     end
 
     def update_obj

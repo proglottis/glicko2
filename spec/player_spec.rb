@@ -85,6 +85,13 @@ describe Glicko2::Player do
       p.sd.must_be_close_to 0.8722, 0.0001
       p.volatility.must_be_close_to 0.05999, 0.00001
     end
+
+    it "must allow players that did not play and games" do
+      p = @player.generate_next([], [])
+      p.mean.must_equal @player.mean
+      p.volatility.must_equal @player.volatility
+      p.sd.must_be_close_to Math.sqrt(@player.sd ** 2 + @player.volatility ** 2)
+    end
   end
 
   describe "#update_obj" do
