@@ -1,6 +1,8 @@
 # Glicko2
 
-TODO: Write a gem description
+Implementation of Glicko2 ratings.
+
+Based on Mark Glickman's paper http://www.glicko.net/glicko/glicko2.pdf
 
 ## Installation
 
@@ -18,7 +20,34 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+```ruby
+require 'glicko2'
+
+# Objects to store Glicko ratings
+Rating = Struct.new(:rating, :rating_deviation, :volatility)
+rating1 = Rating.new(1400, 30, 0.06)
+rating2 = Rating.new(1550, 100, 0.06)
+
+# Create players based on Glicko ratings
+player1 = Glicko2::Player.from_obj(rating1)
+player2 = Glicko2::Player.from_obj(rating2)
+
+# Rating period with all participating players
+period = Glicko2::RatingPeriod.new [player1, player2]
+
+# Register a game in this rating period
+period.game([player1, player2], [1,2])
+
+# Generate the next rating period with updated players
+next_period = period.generate_next
+
+# Update all Glicko ratings
+next_period.players.each { |p| p.update_obj }
+
+# Output updated Glicko ratings
+puts rating1
+puts rating2
+```
 
 ## Contributing
 
