@@ -92,6 +92,10 @@ describe Glicko2::Player do
       p.volatility.must_equal @player.volatility
       p.sd.must_be_close_to Math.sqrt(@player.sd ** 2 + @player.volatility ** 2)
     end
+
+    bench_performance_linear "default" do |n|
+      @player.generate_next(@others * n, @scores * n)
+    end
   end
 
   describe "#update_obj" do

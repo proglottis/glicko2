@@ -28,7 +28,7 @@ module Glicko2
     end
 
     def g
-      1 / Math.sqrt(1 + 3 * sd ** 2 / Math::PI ** 2)
+      @g ||= 1 / Math.sqrt(1 + 3 * sd ** 2 / Math::PI ** 2)
     end
 
     def e(other)
@@ -48,19 +48,18 @@ module Glicko2
       end * variance(others)
     end
 
-    def f_part1(x, others, scores)
+    def f_part1(x, d, v)
+      exp_x = Math.exp(x)
       sd_sq = sd ** 2
-      v = variance(others)
-      _x = Math.exp(x)
-      (_x * (delta(others, scores) ** 2 - sd_sq - v - _x)) / (2 * (sd_sq + v + _x) ** 2)
+      (exp_x * (d ** 2 - sd_sq - v - exp_x)) / (2 * (sd_sq + v + exp_x) ** 2)
     end
  
     def f_part2(x)
       (x - Math::log(volatility ** 2)) / VOLATILITY_CHANGE ** 2
     end
  
-    def f(x, others, scores)
-      f_part1(x, others, scores) - f_part2(x)
+    def f(x, d, v)
+      f_part1(x, d, v) - f_part2(x)
     end
  
     def generate_next(others, scores)
@@ -69,19 +68,20 @@ module Glicko2
         return self.class.new(mean, sd_pre, volatility, obj) if others.length < 1
       end
       _v = variance(others)
+      _d = delta(others, scores)
       a = Math::log(volatility ** 2)
-      if delta(others, scores) > sd ** 2 + _v
+      if _d > sd ** 2 + _v
         b = Math.log(_delta - sd ** 2 - _v)
       else
         k = 1
-        k += 1 while f(a - k * VOLATILITY_CHANGE, others, scores) < 0
+        k += 1 while f(a - k * VOLATILITY_CHANGE, _d, _v) < 0
         b = a - k * VOLATILITY_CHANGE
       end
-      fa = f(a, others, scores)
-      fb = f(b, others, scores)
+      fa = f(a, _d, _v)
+      fb = f(b, _d, _v)
       while (b - a).abs > TOLERANCE
         c = a + (a - b) * fa / (fb - fa)
-        fc = f(c, others, scores)
+        fc = f(c, _d, _v)
         if fc * fb < 0
           a = b
           fa = fb
