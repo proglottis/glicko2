@@ -33,7 +33,7 @@ describe Glicko2::RatingPeriod do
     end
   end
 
-  describe "complete rating period" do
+  describe "#generate_next" do
     it "must be close to example" do
       @period.game([@player, @player1], [1, 2])
       @period.game([@player, @player2], [2, 1])
@@ -47,6 +47,13 @@ describe Glicko2::RatingPeriod do
 
     it "must process non-competing players" do
       @period.game([@player, @player1], [1, 2])
+      @period.generate_next
+    end
+
+    bench_performance_linear "default" do |n|
+      n.times do
+        @period.game(@players.sample(2), [1, 2])
+      end
       @period.generate_next
     end
   end
