@@ -141,7 +141,11 @@ module Glicko2
     def generate_next
       p = []
       @players.each do |player, games|
-        p << player.generate_next(*games.transpose)
+        if games.length > 0
+          p << player.generate_next(*games.transpose)
+        else
+          p << player.generate_next([], [])
+        end
       end
       self.class.new(p)
     end

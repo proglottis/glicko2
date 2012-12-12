@@ -44,5 +44,10 @@ describe Glicko2::RatingPeriod do
       obj.rating_deviation.must_be_close_to 151.52, 0.01
       obj.volatility.must_be_close_to 0.05999, 0.00001
     end
+
+    it "must process non-competing players" do
+      @period.game([@player, @player1], [1, 2])
+      @period.generate_next
+    end
   end
 end
