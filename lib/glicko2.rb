@@ -39,7 +39,8 @@ module Glicko2
     def variance(others)
       return 0.0 if others.length < 1
       others.reduce(0) do |v, other|
-        v + other.g ** 2 * e(other) * (1 - e(other))
+        e_other = e(other)
+        v + other.g ** 2 * e_other * (1 - e_other)
       end ** -1
     end
 
@@ -91,16 +92,10 @@ module Glicko2
 
     def generate_next(others, scores)
       if others.length < 1
-        sd_pre = Math.sqrt(sd ** 2 + volatility ** 2)
-        return self.class.new(mean, sd_pre, volatility, obj) if others.length < 1
+        generate_next_without_games
+      else
+        generate_next_with_games(others, scores)
       end
-      _v = variance(others)
-      _d = delta(others, scores)
-      _volatility = volatility1(_d, _v)
-      sd_pre = Math.sqrt(sd ** 2 + _volatility ** 2)
-      _sd = 1 / Math.sqrt(1 / sd_pre ** 2 + 1 / _v)
-      _mean = mean + _sd ** 2 * others.zip(scores).reduce(0) {|x, (other, score)| x + other.g * (score - e(other)) }
-      self.class.new(_mean, _sd, _volatility, obj)
     end
 
     def update_obj
@@ -111,6 +106,23 @@ module Glicko2
 
     def to_s
       "#<Player mean=#{mean}, sd=#{sd}, volatility=#{volatility}, obj=#{obj}>"
+    end
+
+    private
+
+    def generate_next_without_games
+      sd_pre = Math.sqrt(sd ** 2 + volatility ** 2)
+      self.class.new(mean, sd_pre, volatility, obj)
+    end
+
+    def generate_next_with_games(others, scores)
+      _v = variance(others)
+      _d = delta(others, scores)
+      _volatility = volatility1(_d, _v)
+      sd_pre = Math.sqrt(sd ** 2 + _volatility ** 2)
+      _sd = 1 / Math.sqrt(1 / sd_pre ** 2 + 1 / _v)
+      _mean = mean + _sd ** 2 * others.zip(scores).reduce(0) {|x, (other, score)| x + other.g * (score - e(other)) }
+      self.class.new(_mean, _sd, _volatility, obj)
     end
   end
 
