@@ -4,19 +4,43 @@ module Glicko2
   # enough that the average number of games that each player has played in is
   # about 5 to 10 games. It could be weekly, monthly or more as required.
   class RatingPeriod
+    # @param [Array<Player>] players
     def initialize(players)
-      @players = players.reduce({}) { |memo, player| memo[player] = []; memo }
+      @players = players.reduce({}) do |memo, player|
+        memo[player] = []
+        memo
+      end
+      @seeds = players.reduce({}) do |memo, player|
+        memo[player.obj] = player
+        memo
+      end
     end
 
-    def game(game_players, ranks)
-      game_players.zip(ranks).each do |player, rank|
-        game_players.zip(ranks).each do |other, other_rank|
-          next if player == other
-          @players[player] << [other, Util.ranks_to_score(rank, other_rank)]
+    # Create rating period from list of seed objects
+    # 
+    # @param [Array<#rating,#rating_deviation,#volatility>] objs seed value objects
+    # @return [RatingPeriod]
+    def self.from_objs(objs)
+      new(objs.map { |obj| Player.from_obj(obj) })
+    end
+
+    # Register a game with this rating period
+    #
+    # @param [Array<#rating,#rating_deviation,#volatility>] game_seeds ratings participating in a game
+    # @param [Array<Integer>] ranks corresponding ranks
+    def game(game_seeds, ranks)
+      game_seeds.zip(ranks).each do |seed, rank|
+        game_seeds.zip(ranks).each do |other, other_rank|
+          next if seed == other
+          @players[@seeds[seed]] << [@seeds[other],
+                                     Util.ranks_to_score(rank, other_rank)]
         end
       end
     end
 
+    # Generate a new {RatingPeriod} with a new list of updated {Player}
+    #
+    # @return [RatingPeriod]
     def generate_next
       p = []
       @players.each do |player, games|
@@ -29,6 +53,7 @@ module Glicko2
       self.class.new(p)
     end
 
+    # @return [Array<Player>]
     def players
       @players.keys
     end
