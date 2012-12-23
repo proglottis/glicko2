@@ -33,8 +33,7 @@ module Glicko2
     # @param [#rating,#rating_deviation,#volatility] obj seed values object
     # @return [Player] constructed instance.
     def self.from_obj(obj)
-      mean = (obj.rating - GLICKO_INTERCEPT) / GLICKO_GRADIENT
-      sd = obj.rating_deviation / GLICKO_GRADIENT
+      mean, sd = Util::to_glicko2(obj.rating, obj.rating_deviation)
       new(mean, sd, obj.volatility, obj)
     end
 
@@ -150,8 +149,7 @@ module Glicko2
 
     # Update seed object with this player's values
     def update_obj
-      @obj.rating = GLICKO_GRADIENT * mean + GLICKO_INTERCEPT
-      @obj.rating_deviation = GLICKO_GRADIENT * sd
+      @obj.rating, @obj.rating_deviation = Util::to_glicko(mean, sd)
       @obj.volatility = volatility
     end
 
