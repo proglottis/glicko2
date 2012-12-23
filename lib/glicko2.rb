@@ -31,5 +31,21 @@ module Glicko2
     def self.to_glicko(m, sd)
       [GLICKO_GRADIENT * m + GLICKO_INTERCEPT, GLICKO_GRADIENT * sd]
     end
+
+    # Convert from a rank, where lower numbers win against higher numbers,
+    # into Glicko scores where wins are `1`, draws are `0.5` and losses are `0`.
+    #
+    # @param [Integer] rank players rank
+    # @param [Integer] other opponents rank
+    # @return [Numeric] Glicko score
+    def self.ranks_to_score(rank, other)
+      if rank < other
+        1.0
+      elsif rank == other
+        0.5
+      else
+        0.0
+      end
+    end
   end
 end

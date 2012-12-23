@@ -1,24 +1,18 @@
 module Glicko2
+  # Glicko ratings are calculated in bulk at the end of arbitrary, but fixed
+  # length, periods named rating periods. Where a period is fixed to be long
+  # enough that the average number of games that each player has played in is
+  # about 5 to 10 games. It could be weekly, monthly or more as required.
   class RatingPeriod
     def initialize(players)
       @players = players.reduce({}) { |memo, player| memo[player] = []; memo }
-    end
-
-    def self.ranks_to_score(rank, other)
-      if rank < other
-        1.0
-      elsif rank == other
-        0.5
-      else
-        0.0
-      end
     end
 
     def game(game_players, ranks)
       game_players.zip(ranks).each do |player, rank|
         game_players.zip(ranks).each do |other, other_rank|
           next if player == other
-          @players[player] << [other, self.class.ranks_to_score(rank, other_rank)]
+          @players[player] << [other, Util.ranks_to_score(rank, other_rank)]
         end
       end
     end
