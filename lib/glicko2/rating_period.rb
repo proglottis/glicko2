@@ -4,20 +4,17 @@ module Glicko2
   # enough that the average number of games that each player has played in is
   # about 5 to 10 games. It could be weekly, monthly or more as required.
   class RatingPeriod
+    attr_reader :players
+
     # @param [Array<Player>] players
     def initialize(players)
-      @players = players.reduce({}) do |memo, player|
-        memo[player] = []
-        memo
-      end
-      @seeds = players.reduce({}) do |memo, player|
-        memo[player.obj] = player
-        memo
-      end
+      @players = players
+      @games = Hash.new { |h, k| h[k] = [] }
+      @cache = players.reduce({}) { |memo, player| memo[player.obj] = player; memo }
     end
 
     # Create rating period from list of seed objects
-    # 
+    #
     # @param [Array<#rating,#rating_deviation,#volatility>] objs seed value objects
     # @return [RatingPeriod]
     def self.from_objs(objs)
@@ -32,8 +29,8 @@ module Glicko2
       game_seeds.zip(ranks).each do |seed, rank|
         game_seeds.zip(ranks).each do |other, other_rank|
           next if seed == other
-          @players[@seeds[seed]] << [@seeds[other],
-                                     Util.ranks_to_score(rank, other_rank)]
+          @games[player(seed)] << [player(other),
+                                 Util.ranks_to_score(rank, other_rank)]
         end
       end
     end
@@ -43,7 +40,8 @@ module Glicko2
     # @return [RatingPeriod]
     def generate_next
       p = []
-      @players.each do |player, games|
+      @players.each do |player|
+        games = @games[player]
         if games.length > 0
           p << player.generate_next(*games.transpose)
         else
@@ -53,13 +51,16 @@ module Glicko2
       self.class.new(p)
     end
 
-    # @return [Array<Player>]
-    def players
-      @players.keys
+    # Fetch the player associated with a seed object
+    #
+    # @param [#rating,#rating_deviation,#volatility] obj seed object
+    # @return [Player]
+    def player(obj)
+      @cache[obj]
     end
 
     def to_s
-      "#<RatingPeriod players=#{@players.keys}"
+      "#<RatingPeriod players=#{@players}"
     end
   end
 end
