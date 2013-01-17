@@ -24,6 +24,7 @@ module Glicko2
   #
   class Player
     TOLERANCE = 0.0000001
+    MIN_SD = DEFAULT_GLICKO_RATING_DEVIATION / GLICKO_GRADIENT
 
     attr_reader :mean, :sd, :volatility, :obj
 
@@ -160,7 +161,7 @@ module Glicko2
     private
 
     def generate_next_without_games
-      sd_pre = Math.sqrt(sd ** 2 + volatility ** 2)
+      sd_pre = [Math.sqrt(sd ** 2 + volatility ** 2), MIN_SD].min
       self.class.new(mean, sd_pre, volatility, obj)
     end
 

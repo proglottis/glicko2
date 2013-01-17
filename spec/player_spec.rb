@@ -93,6 +93,13 @@ describe Glicko2::Player do
       p.sd.must_be_close_to Math.sqrt(@player.sd ** 2 + @player.volatility ** 2)
     end
 
+    it "must not decay rating deviation above default" do
+      @player = Glicko2::Player.from_obj(Rating.new(1500, Glicko2::DEFAULT_GLICKO_RATING_DEVIATION, 0.06))
+      p = @player.generate_next([], [])
+      p.update_obj
+      p.obj.rating_deviation.must_equal Glicko2::DEFAULT_GLICKO_RATING_DEVIATION
+    end
+
     bench_performance_linear "default" do |n|
       @player.generate_next(@others * n, @scores * n)
     end

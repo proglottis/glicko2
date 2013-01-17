@@ -1,17 +1,13 @@
-require "glicko2/version"
-require "glicko2/player"
-require "glicko2/rating_period"
-
 module Glicko2
   DEFAULT_VOLATILITY = 0.06
   DEFAULT_GLICKO_RATING = 1500.0
   DEFAULT_GLICKO_RATING_DEVIATION = 350.0
+  GLICKO_GRADIENT = 173.7178
 
   VOLATILITY_CHANGE = 0.5
 
   # Collection of helper methods
   class Util
-    GLICKO_GRADIENT = 173.7178
     GLICKO_INTERCEPT = DEFAULT_GLICKO_RATING
 
     # Convert from the original Glicko scale to Glicko2 scale
@@ -49,3 +45,7 @@ module Glicko2
     end
   end
 end
+
+require "glicko2/version"
+require "glicko2/player"
+require "glicko2/rating_period"
