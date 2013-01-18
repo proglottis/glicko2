@@ -33,20 +33,21 @@ module Glicko2
     #
     # @param [#rating,#rating_deviation,#volatility] obj seed values object
     # @return [Player] constructed instance.
-    def self.from_obj(obj)
+    def self.from_obj(obj, config=DEFAULT_CONFIG)
       mean, sd = Util.to_glicko2(obj.rating, obj.rating_deviation)
-      new(mean, sd, obj.volatility, obj)
+      new(mean, sd, obj.volatility, obj, config)
     end
 
     # @param [Numeric] mean player mean
     # @param [Numeric] sd player standard deviation
     # @param [Numeric] volatility player volatility
     # @param [#rating,#rating_deviation,#volatility] obj seed values object
-    def initialize(mean, sd, volatility, obj=nil)
+    def initialize(mean, sd, volatility, obj=nil, config=DEFAULT_CONFIG)
       @mean = mean
       @sd = sd
       @volatility = volatility
       @obj = obj
+      @config = config
       @e = {}
     end
 
@@ -112,8 +113,8 @@ module Glicko2
         b = Math.log(d - sd ** 2 - v)
       else
         k = 1
-        k += 1 while f(a - k * VOLATILITY_CHANGE, d, v) < 0
-        b = a - k * VOLATILITY_CHANGE
+        k += 1 while f(a - k * @config[:volatility_change], d, v) < 0
+        b = a - k * @config[:volatility_change]
       end
       fa = f(a, d, v)
       fb = f(b, d, v)
@@ -184,7 +185,7 @@ module Glicko2
     end
 
     def f_part2(x)
-      (x - Math::log(volatility ** 2)) / VOLATILITY_CHANGE ** 2
+      (x - Math::log(volatility ** 2)) / @config[:volatility_change] ** 2
     end
   end
 end

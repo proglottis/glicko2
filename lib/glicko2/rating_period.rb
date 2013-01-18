@@ -17,8 +17,8 @@ module Glicko2
     #
     # @param [Array<#rating,#rating_deviation,#volatility>] objs seed value objects
     # @return [RatingPeriod]
-    def self.from_objs(objs)
-      new(objs.map { |obj| Player.from_obj(obj) })
+    def self.from_objs(objs, config=DEFAULT_CONFIG)
+      new(objs.map { |obj| Player.from_obj(obj, config) })
     end
 
     # Register a game with this rating period

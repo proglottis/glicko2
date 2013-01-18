@@ -4,7 +4,7 @@ module Glicko2
   DEFAULT_GLICKO_RATING_DEVIATION = 350.0
   GLICKO_GRADIENT = 173.7178
 
-  VOLATILITY_CHANGE = 0.5
+  DEFAULT_CONFIG = {:volatility_change => 0.5}.freeze
 
   # Collection of helper methods
   class Util
