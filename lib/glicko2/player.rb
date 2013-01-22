@@ -170,7 +170,7 @@ module Glicko2
       _v = variance(others)
       _d = delta(others, scores)
       _volatility = volatility1(_d, _v)
-      sd_pre = Math.sqrt(sd ** 2 + _volatility ** 2)
+      sd_pre = [Math.sqrt(sd ** 2 + volatility ** 2), MIN_SD].min
       _sd = 1 / Math.sqrt(1 / sd_pre ** 2 + 1 / _v)
       _mean = mean + _sd ** 2 * others.zip(scores).reduce(0) {
         |x, (other, score)| x + other.g * (score - e(other))
