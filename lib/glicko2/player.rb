@@ -22,11 +22,11 @@ module Glicko2
   #
   #   puts player_seed
   #
-  class Player
+  class Player < NormalDistribution
     TOLERANCE = 0.0000001
     MIN_SD = DEFAULT_GLICKO_RATING_DEVIATION / GLICKO_GRADIENT
 
-    attr_reader :mean, :sd, :volatility, :obj
+    attr_reader :volatility, :obj
 
     # Create a {Player} from a seed object, converting from Glicko
     # ratings to Glicko2.
@@ -43,8 +43,7 @@ module Glicko2
     # @param [Numeric] volatility player volatility
     # @param [#rating,#rating_deviation,#volatility] obj seed values object
     def initialize(mean, sd, volatility, obj=nil, config=DEFAULT_CONFIG)
-      @mean = mean
-      @sd = sd
+      super(mean, sd)
       @volatility = volatility
       @obj = obj
       @config = config
@@ -55,7 +54,7 @@ module Glicko2
     #
     # @return [Numeric]
     def g
-      @g ||= 1 / Math.sqrt(1 + 3 * sd ** 2 / Math::PI ** 2)
+      @g ||= 1 / Math.sqrt(1 + 3 * variance / Math::PI ** 2)
     end
 
     # Calculate `E(mu, mu_j, phi_j)` as defined in the Glicko2 paper
@@ -71,7 +70,7 @@ module Glicko2
     #
     # @param [Array<Player>] others other participating players.
     # @return [Numeric]
-    def variance(others)
+    def estimated_variance(others)
       return 0.0 if others.length < 1
       others.reduce(0) do |v, other|
         e_other = e(other)
@@ -89,14 +88,14 @@ module Glicko2
     def delta(others, scores)
       others.zip(scores).reduce(0) do |d, (other, score)|
         d + other.g * (score - e(other))
-      end * variance(others)
+      end * estimated_variance(others)
     end
 
     # Calculate `f(x)` as defined in the Glicko2 paper
     #
     # @param [Numeric] x
     # @param [Numeric] d the result of calculating {#delta}
-    # @param [Numeric] v the result of calculating {#variance}
+    # @param [Numeric] v the result of calculating {#estimated_variance}
     # @return [Numeric]
     def f(x, d, v)
       f_part1(x, d, v) - f_part2(x)
@@ -105,12 +104,12 @@ module Glicko2
     # Calculate the new value of the volatility
     #
     # @param [Numeric] d the result of calculating {#delta}
-    # @param [Numeric] v the result of calculating {#variance}
+    # @param [Numeric] v the result of calculating {#estimated_variance}
     # @return [Numeric]
     def volatility1(d, v)
       a = Math::log(volatility ** 2)
-      if d > sd ** 2 + v
-        b = Math.log(d - sd ** 2 - v)
+      if d > variance + v
+        b = Math.log(d - variance - v)
       else
         k = 1
         k += 1 while f(a - k * @config[:volatility_change], d, v) < 0
@@ -162,15 +161,15 @@ module Glicko2
     private
 
     def generate_next_without_games
-      sd_pre = [Math.sqrt(sd ** 2 + volatility ** 2), MIN_SD].min
+      sd_pre = [Math.sqrt(variance + volatility ** 2), MIN_SD].min
       self.class.new(mean, sd_pre, volatility, obj)
     end
 
     def generate_next_with_games(others, scores)
-      _v = variance(others)
+      _v = estimated_variance(others)
       _d = delta(others, scores)
       _volatility = volatility1(_d, _v)
-      sd_pre = [Math.sqrt(sd ** 2 + volatility ** 2), MIN_SD].min
+      sd_pre = [Math.sqrt(variance + volatility ** 2), MIN_SD].min
       _sd = 1 / Math.sqrt(1 / sd_pre ** 2 + 1 / _v)
       _mean = mean + _sd ** 2 * others.zip(scores).reduce(0) {
         |x, (other, score)| x + other.g * (score - e(other))
@@ -180,7 +179,7 @@ module Glicko2
 
     def f_part1(x, d, v)
       exp_x = Math.exp(x)
-      sd_sq = sd ** 2
+      sd_sq = variance
       (exp_x * (d ** 2 - sd_sq - v - exp_x)) / (2 * (sd_sq + v + exp_x) ** 2)
     end
 

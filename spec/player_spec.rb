@@ -66,9 +66,9 @@ describe Glicko2::Player do
     end
   end
 
-  describe "#variance" do
+  describe "#estimated_variance" do
     it "must be close to example" do
-      @player.variance(@others).must_be_close_to 1.7785
+      @player.estimated_variance(@others).must_be_close_to 1.7785
     end
   end
 

@@ -47,5 +47,6 @@ module Glicko2
 end
 
 require "glicko2/version"
+require "glicko2/normal_distribution"
 require "glicko2/player"
 require "glicko2/rating_period"
