@@ -34,4 +34,20 @@ describe Glicko2::NormalDistribution do
       (dist1 - dist2).sd.must_equal Math.sqrt(0.5 ** 2.0 + 1.0 ** 2.0)
     end
   end
+
+  describe "#pdf" do
+    describe "standard normal" do
+      let(:dist) { Glicko2::NormalDistribution.new(0.0, 1.0) }
+
+      it "must calculate PDF at x" do
+        dist.pdf(-5.0).must_be_close_to 0.00000149, 0.00000001
+        dist.pdf(-2.5).must_be_close_to 0.01752830, 0.00000001
+        dist.pdf(-1.0).must_be_close_to 0.24197072, 0.00000001
+        dist.pdf(0.0).must_be_close_to 0.39894228, 0.00000001
+        dist.pdf(1.0).must_be_close_to 0.24197072, 0.00000001
+        dist.pdf(2.5).must_be_close_to 0.01752830, 0.00000001
+        dist.pdf(5.0).must_be_close_to 0.00000149, 0.00000001
+      end
+    end
+  end
 end

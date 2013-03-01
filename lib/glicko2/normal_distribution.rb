@@ -20,6 +20,10 @@ module Glicko2
       self.class.new(mean - other.mean, Math.sqrt(variance + other.variance))
     end
 
+    def pdf(x)
+      1.0 / (sd * Math.sqrt(2.0 * Math::PI)) * Math.exp(-(x - mean) ** 2.0 / 2.0 * variance)
+    end
+
     def to_s
       "#<NormalDistribution mean=#{mean}, sd=#{sd}>"
     end
