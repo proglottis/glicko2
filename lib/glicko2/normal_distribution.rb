@@ -12,6 +12,14 @@ module Glicko2
       standard_deviation ** 2.0
     end
 
+    def +(other)
+      self.class.new(mean + other.mean, Math.sqrt(variance + other.variance))
+    end
+
+    def -(other)
+      self.class.new(mean - other.mean, Math.sqrt(variance + other.variance))
+    end
+
     def to_s
       "#<NormalDistribution mean=#{mean}, sd=#{sd}>"
     end
