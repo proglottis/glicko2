@@ -24,6 +24,10 @@ module Glicko2
       1.0 / (sd * Math.sqrt(2.0 * Math::PI)) * Math.exp(-(x - mean) ** 2.0 / 2.0 * variance)
     end
 
+    def cdf(x)
+      0.5 * (1.0 + Math.erf((x - mean) / (sd * Math.sqrt(2.0))))
+    end
+
     def to_s
       "#<NormalDistribution mean=#{mean}, sd=#{sd}>"
     end

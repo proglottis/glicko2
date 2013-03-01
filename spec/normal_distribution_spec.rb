@@ -50,4 +50,20 @@ describe Glicko2::NormalDistribution do
       end
     end
   end
+
+  describe "#cdf" do
+    describe "standard normal" do
+      let(:dist) { Glicko2::NormalDistribution.new(0.0, 1.0) }
+
+      it "must calculate CDF at x" do
+        dist.cdf(-5.0).must_be_close_to 0.00000029, 0.00000001
+        dist.cdf(-2.5).must_be_close_to 0.00620967, 0.00000001
+        dist.cdf(-1.0).must_be_close_to 0.15865525, 0.00000001
+        dist.cdf(0.0).must_be_close_to 0.50000000, 0.00000001
+        dist.cdf(1.0).must_be_close_to 0.84134475, 0.00000001
+        dist.cdf(2.5).must_be_close_to 0.99379033, 0.00000001
+        dist.cdf(5.0).must_be_close_to 0.99999971, 0.00000001
+      end
+    end
+  end
 end
