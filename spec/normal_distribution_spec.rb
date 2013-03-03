@@ -66,4 +66,33 @@ describe Glicko2::NormalDistribution do
       end
     end
   end
+
+  describe "#<=>" do
+    let(:dist1) { Glicko2::NormalDistribution.new(10.0, 0.5) }
+    let(:dist2) { Glicko2::NormalDistribution.new(5.0, 1.0) }
+
+    it "must compare the same mean" do
+      (dist1 <=> dist1).must_equal 0
+      (dist2 <=> dist2).must_equal 0
+    end
+
+    it "must compare against smaller mean" do
+      (dist1 <=> dist2).must_equal 1
+    end
+
+    it "must compare against larger mean" do
+      (dist2 <=> dist1).must_equal -1
+    end
+
+    describe "Comparable" do
+      it "must compare" do
+        (dist1 == dist1).must_equal true
+        (dist2 == dist2).must_equal true
+        (dist1 > dist2).must_equal true
+        (dist1 < dist2).must_equal false
+        (dist2 > dist1).must_equal false
+        (dist2 < dist1).must_equal true
+      end
+    end
+  end
 end

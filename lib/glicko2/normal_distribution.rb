@@ -3,6 +3,8 @@ module Glicko2
   # gem it is assumed that ratings are normally distributed where rating and
   # rating deviation correspond to mean and standard deviation.
   class NormalDistribution
+    include Comparable
+
     attr_reader :mean, :standard_deviation
     alias_method :sd, :standard_deviation
 
@@ -49,6 +51,10 @@ module Glicko2
     # @return [Numeric]
     def cdf(x)
       0.5 * (1.0 + Math.erf((x - mean) / (sd * Math.sqrt(2.0))))
+    end
+
+    def <=>(other)
+      mean <=> other.mean
     end
 
     def to_s
