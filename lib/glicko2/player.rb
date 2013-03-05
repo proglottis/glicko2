@@ -22,114 +22,27 @@ module Glicko2
   #
   #   puts player_seed
   #
-  class Player < NormalDistribution
-    TOLERANCE = 0.0000001
-    MIN_SD = DEFAULT_GLICKO_RATING_DEVIATION / GLICKO_GRADIENT
-
-    attr_reader :volatility, :obj
+  class Player
+    attr_reader :rating, :obj
 
     # Create a {Player} from a seed object, converting from Glicko
     # ratings to Glicko2.
     #
     # @param [#rating,#rating_deviation,#volatility] obj seed values object
     # @return [Player] constructed instance.
-    def self.from_obj(obj, config=DEFAULT_CONFIG)
-      mean, sd = Util.to_glicko2(obj.rating, obj.rating_deviation)
-      new(mean, sd, obj.volatility, obj, config)
+    def self.from_obj(obj, config=nil)
+      rating = Rating.from_glicko_rating(obj.rating, obj.rating_deviation,
+                                         obj.volatility, config)
+      new(rating, obj)
     end
 
     # @param [Numeric] mean player mean
     # @param [Numeric] sd player standard deviation
     # @param [Numeric] volatility player volatility
     # @param [#rating,#rating_deviation,#volatility] obj seed values object
-    def initialize(mean, sd, volatility, obj=nil, config=DEFAULT_CONFIG)
-      super(mean, sd)
-      @volatility = volatility
+    def initialize(rating, obj=nil)
+      @rating = rating
       @obj = obj
-      @config = config
-      @e = {}
-    end
-
-    # Calculate `g(phi)` as defined in the Glicko2 paper
-    #
-    # @return [Numeric]
-    def g
-      @g ||= 1 / Math.sqrt(1 + 3 * variance / Math::PI ** 2)
-    end
-
-    # Calculate `E(mu, mu_j, phi_j)` as defined in the Glicko2 paper
-    #
-    # @param [Player] other the `j` player
-    # @return [Numeric]
-    def e(other)
-      @e[other] ||= 1 / (1 + Math.exp(-other.g * (mean - other.mean)))
-    end
-
-    # Calculate the estimated variance of the team's/player's rating based only
-    # on the game outcomes.
-    #
-    # @param [Array<Player>] others other participating players.
-    # @return [Numeric]
-    def estimated_variance(others)
-      return 0.0 if others.length < 1
-      others.reduce(0) do |v, other|
-        e_other = e(other)
-        v + other.g ** 2 * e_other * (1 - e_other)
-      end ** -1
-    end
-
-    # Calculate the estimated improvement in rating by comparing the
-    # pre-period rating to the performance rating based only on game outcomes.
-    #
-    # @param [Array<Player>] others list of opponent players
-    # @param [Array<Numeric>] scores list of correlating scores (`0` for a loss,
-    #   `0.5` for a draw and `1` for a win).
-    # @return [Numeric]
-    def delta(others, scores)
-      others.zip(scores).reduce(0) do |d, (other, score)|
-        d + other.g * (score - e(other))
-      end * estimated_variance(others)
-    end
-
-    # Calculate `f(x)` as defined in the Glicko2 paper
-    #
-    # @param [Numeric] x
-    # @param [Numeric] d the result of calculating {#delta}
-    # @param [Numeric] v the result of calculating {#estimated_variance}
-    # @return [Numeric]
-    def f(x, d, v)
-      f_part1(x, d, v) - f_part2(x)
-    end
-
-    # Calculate the new value of the volatility
-    #
-    # @param [Numeric] d the result of calculating {#delta}
-    # @param [Numeric] v the result of calculating {#estimated_variance}
-    # @return [Numeric]
-    def volatility1(d, v)
-      a = Math::log(volatility ** 2)
-      if d > variance + v
-        b = Math.log(d - variance - v)
-      else
-        k = 1
-        k += 1 while f(a - k * @config[:volatility_change], d, v) < 0
-        b = a - k * @config[:volatility_change]
-      end
-      fa = f(a, d, v)
-      fb = f(b, d, v)
-      while (b - a).abs > TOLERANCE
-        c = a + (a - b) * fa / (fb - fa)
-        fc = f(c, d, v)
-        if fc * fb < 0
-          a = b
-          fa = fb
-        else
-          fa /= 2.0
-        end
-        b = c
-        fb = fc
-      end
-      Math.exp(a / 2.0)
     end
 
     # Create new {Player} with updated values.
@@ -144,47 +57,55 @@ module Glicko2
       if others.length < 1
         generate_next_without_games
       else
+        others = others.map{ |other| other.rating }
         generate_next_with_games(others, scores)
       end
     end
 
     # Update seed object with this player's values
     def update_obj
-      @obj.rating, @obj.rating_deviation = Util.to_glicko(mean, sd)
+      glicko_rating = rating.to_glicko_rating
+      @obj.rating = glicko_rating.mean
+      @obj.rating_deviation = glicko_rating.standard_deviation
       @obj.volatility = volatility
     end
 
+    def mean
+      rating.mean
+    end
+
+    def standard_deviation
+      rating.standard_deviation
+    end
+    alias_method :sd, :standard_deviation
+
+    def volatility
+      rating.volatility
+    end
+
     def to_s
-      "#<Player mean=#{mean}, sd=#{sd}, volatility=#{volatility}, obj=#{obj}>"
+      "#<Player rating=#{rating}, obj=#{obj}>"
     end
 
     private
 
     def generate_next_without_games
-      sd_pre = [Math.sqrt(variance + volatility ** 2), MIN_SD].min
-      self.class.new(mean, sd_pre, volatility, obj)
+      next_rating = Rating.new(mean, rating.standard_deviation_pre,
+                               volatility, rating.config)
+      self.class.new(next_rating, obj)
     end
 
     def generate_next_with_games(others, scores)
-      _v = estimated_variance(others)
-      _d = delta(others, scores)
-      _volatility = volatility1(_d, _v)
-      sd_pre = [Math.sqrt(variance + volatility ** 2), MIN_SD].min
-      _sd = 1 / Math.sqrt(1 / sd_pre ** 2 + 1 / _v)
-      _mean = mean + _sd ** 2 * others.zip(scores).reduce(0) {
-        |x, (other, score)| x + other.g * (score - e(other))
-      }
-      self.class.new(_mean, _sd, _volatility, obj)
+      rating = generate_next_rating(others, scores)
+      self.class.new(rating, obj)
     end
 
-    def f_part1(x, d, v)
-      exp_x = Math.exp(x)
-      sd_sq = variance
-      (exp_x * (d ** 2 - sd_sq - v - exp_x)) / (2 * (sd_sq + v + exp_x) ** 2)
-    end
-
-    def f_part2(x)
-      (x - Math::log(volatility ** 2)) / @config[:volatility_change] ** 2
+    def generate_next_rating(others, scores)
+      _v = rating.estimated_variance(others)
+      _volatility = rating.next_volatility(others, scores, _v)
+      _sd = rating.next_standard_deviation(_v)
+      _mean = rating.next_mean(others, scores, _sd)
+      Rating.new(_mean, _sd, _volatility, rating.config)
     end
   end
 end

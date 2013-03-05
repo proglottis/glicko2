@@ -1,7 +1,5 @@
 require 'minitest_helper'
 
-Rating = Struct.new(:rating, :rating_deviation, :volatility)
-
 describe Glicko2::Player do
   before do
     @player = Glicko2::Player.from_obj(Rating.new(1500, 200, 0.06))
@@ -35,46 +33,6 @@ describe Glicko2::Player do
       @player3.mean.must_be_close_to 1.1513, 0.0001
       @player3.sd.must_be_close_to 1.7269, 0.0001
       @player3.volatility.must_equal 0.06
-    end
-  end
-
-  describe "#g" do
-    it "must be close to example 1" do
-      @player1.g.must_be_close_to 0.9955, 0.0001
-    end
-
-    it "must be close to example 2" do
-      @player2.g.must_be_close_to 0.9531, 0.0001
-    end
-
-    it "must be close to example 3" do
-      @player3.g.must_be_close_to 0.7242, 0.0001
-    end
-  end
-
-  describe "#e" do
-    it "must be close to example 1" do
-      @player.e(@player1).must_be_close_to 0.639
-    end
-
-    it "must be close to example 2" do
-      @player.e(@player2).must_be_close_to 0.432
-    end
-
-    it "must be close to example 3" do
-      @player.e(@player3).must_be_close_to 0.303
-    end
-  end
-
-  describe "#estimated_variance" do
-    it "must be close to example" do
-      @player.estimated_variance(@others).must_be_close_to 1.7785
-    end
-  end
-
-  describe "#delta" do
-    it "must be close to example" do
-      @player.delta(@others, @scores).must_be_close_to -0.4834
     end
   end
 
