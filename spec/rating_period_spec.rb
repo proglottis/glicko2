@@ -10,6 +10,14 @@ describe Glicko2::RatingPeriod do
     @period = Glicko2::RatingPeriod.from_objs(@players)
   end
 
+  describe "#initialize" do
+    it "must raise if two players are identical" do
+      proc {
+        Glicko2::RatingPeriod.from_objs([@player, @player])
+      }.must_raise Glicko2::DuplicatePlayerError
+    end
+  end
+
   describe "#generate_next" do
     it "must be close to example" do
       @period.game([@player, @player1], [1, 2])

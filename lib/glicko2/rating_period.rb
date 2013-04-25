@@ -10,7 +10,11 @@ module Glicko2
     def initialize(players)
       @players = players
       @games = Hash.new { |h, k| h[k] = [] }
-      @cache = players.reduce({}) { |memo, player| memo[player.obj] = player; memo }
+      @cache = players.reduce({}) do |memo, player|
+        raise DuplicatePlayerError if memo[player.obj] != nil
+        memo[player.obj] = player
+        memo
+      end
     end
 
     # Create rating period from list of seed objects

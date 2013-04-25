@@ -5,6 +5,8 @@ module Glicko2
 
   DEFAULT_CONFIG = {:volatility_change => 0.5}.freeze
 
+  class DuplicatePlayerError < StandardError; end
+
   # Collection of helper methods
   class Util
     # Convert from a rank, where lower numbers win against higher numbers,
