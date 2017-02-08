@@ -81,7 +81,7 @@ describe Glicko2::NormalDistribution do
     end
 
     it "must compare against larger mean" do
-      (dist2 <=> dist1).must_equal -1
+      (dist2 <=> dist1).must_equal(-1)
     end
 
     describe "Comparable" do

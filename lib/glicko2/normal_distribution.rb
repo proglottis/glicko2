@@ -41,8 +41,7 @@ module Glicko2
     # @param [Numeric] x
     # @return [Numeric]
     def pdf(x)
-      1.0 / (sd * Math.sqrt(2.0 * Math::PI)) *
-        Math.exp(-(x - mean) ** 2.0 / 2.0 * variance)
+      1.0 / (sd * Math.sqrt(2.0 * Math::PI)) * Math.exp(-(x - mean) ** 2.0 / 2.0 * variance)
     end
 
     # Calculate the cumulative distribution at `x`

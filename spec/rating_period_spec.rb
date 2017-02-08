@@ -23,7 +23,7 @@ describe Glicko2::RatingPeriod do
       @period.game([@player, @player1], [1, 2])
       @period.game([@player, @player2], [2, 1])
       @period.game([@player, @player3], [2, 1])
-      @period.generate_next.players.each { |p| p.update_obj }
+      @period.generate_next(0.5).players.each { |p| p.update_obj }
       obj = @player
       obj.rating.must_be_close_to 1464.06, 0.01
       obj.rating_deviation.must_be_close_to 151.52, 0.01
@@ -32,14 +32,7 @@ describe Glicko2::RatingPeriod do
 
     it "must process non-competing players" do
       @period.game([@player, @player1], [1, 2])
-      @period.generate_next
-    end
-
-    bench_performance_linear "default" do |n|
-      n.times do
-        @period.game(@players.sample(2), [1, 2])
-      end
-      @period.generate_next
+      @period.generate_next 0.5
     end
   end
 end

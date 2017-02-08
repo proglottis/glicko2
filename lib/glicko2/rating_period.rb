@@ -9,20 +9,20 @@ module Glicko2
     # @param [Array<Player>] players
     def initialize(players)
       @players = players
-      @games = Hash.new { |h, k| h[k] = [] }
       @cache = players.reduce({}) do |memo, player|
         raise DuplicatePlayerError if memo[player.obj] != nil
         memo[player.obj] = player
         memo
       end
+      @raters = players.map { |p| Rater.new(p.rating) }
     end
 
     # Create rating period from list of seed objects
     #
     # @param [Array<#rating,#rating_deviation,#volatility>] objs seed value objects
     # @return [RatingPeriod]
-    def self.from_objs(objs, config=DEFAULT_CONFIG)
-      new(objs.map { |obj| Player.from_obj(obj, config) })
+    def self.from_objs(objs)
+      new(objs.map { |obj| Player.from_obj(obj) })
     end
 
     # Register a game with this rating period
@@ -30,11 +30,10 @@ module Glicko2
     # @param [Array<#rating,#rating_deviation,#volatility>] game_seeds ratings participating in a game
     # @param [Array<Integer>] ranks corresponding ranks
     def game(game_seeds, ranks)
-      game_seeds.zip(ranks).each do |seed, rank|
-        game_seeds.zip(ranks).each do |other, other_rank|
-          next if seed == other
-          @games[player(seed)] << [player(other),
-                                 Util.ranks_to_score(rank, other_rank)]
+      game_seeds.each_with_index do |iseed, i|
+        game_seeds.each_with_index do |jseed, j|
+          next if i == j
+          @raters[i].add(player(jseed).rating, Util::ranks_to_score(ranks[i], ranks[j]))
         end
       end
     end
@@ -42,15 +41,10 @@ module Glicko2
     # Generate a new {RatingPeriod} with a new list of updated {Player}
     #
     # @return [RatingPeriod]
-    def generate_next
+    def generate_next(tau)
       p = []
-      @players.each do |player|
-        games = @games[player]
-        if games.length > 0
-          p << player.generate_next(*games.transpose)
-        else
-          p << player.generate_next([], [])
-        end
+      @raters.each_with_index do |rater, i|
+        p << Player.new(rater.rate(tau), @players[i].obj)
       end
       self.class.new(p)
     end
