@@ -35,7 +35,7 @@ period = Glicko2::RatingPeriod.from_objs [rating1, rating2]
 period.game([rating1, rating2], [1,2])
 
 # Generate the next rating period with updated players
-next_period = period.generate_next
+next_period = period.generate_next(0.5)
 
 # Update all Glicko ratings
 next_period.players.each { |p| p.update_obj }
