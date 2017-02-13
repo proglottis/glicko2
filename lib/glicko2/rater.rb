@@ -22,18 +22,20 @@ module Glicko2
       delta2 = @delta_pre**2
       sd2 = rating.sd**2
       a = Math.log(rating.volatility**2)
-      f = lambda do |x|
-        expX = Math.exp(x)
-        (expX * (delta2 - sd2 - v - expX)) / (2 * (sd2 + v + expX)**2) - (x - a) / tau**2
+      if v.finite?
+        f = lambda do |x|
+          expX = Math.exp(x)
+          (expX * (delta2 - sd2 - v - expX)) / (2 * (sd2 + v + expX)**2) - (x - a) / tau**2
+        end
+        if delta2 > sd2 + v
+          b = Math.log(delta2 - sd2 - v)
+        else
+          k = 1
+          k += 1 while f.call(a - k * tau) < 0
+          b = a - k * tau
+        end
+        a = Util.illinois_method(a, b, &f)
       end
-      if delta2 > sd2 + v
-        b = Math.log(delta2 - sd2 - v)
-      else
-        k = 1
-        k += 1 while f.call(a - k * tau) < 0
-        b = a - k * tau
-      end
-      a = Util.illinois_method(a, b, &f)
       volatility = Math.exp(a / 2.0)
       sd_pre = Math.sqrt(sd2 + volatility**2)
       sd = 1 / Math.sqrt(1.0 / sd_pre**2 + 1 / v)
