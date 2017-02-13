@@ -14,7 +14,10 @@ module Glicko2
         memo[player.obj] = player
         memo
       end
-      @raters = players.map { |p| Rater.new(p.rating) }
+      @raters = players.reduce({}) do |memo, player|
+        memo[player.obj] = Rater.new(player.rating)
+        memo
+      end
     end
 
     # Create rating period from list of seed objects
@@ -33,7 +36,7 @@ module Glicko2
       game_seeds.each_with_index do |iseed, i|
         game_seeds.each_with_index do |jseed, j|
           next if i == j
-          @raters[i].add(player(jseed).rating, Util.ranks_to_score(ranks[i], ranks[j]))
+          @raters[iseed].add(player(jseed).rating, Util.ranks_to_score(ranks[i], ranks[j]))
         end
       end
     end
@@ -43,8 +46,8 @@ module Glicko2
     # @return [RatingPeriod]
     def generate_next(tau)
       p = []
-      @raters.each_with_index do |rater, i|
-        p << Player.new(rater.rate(tau), @players[i].obj)
+      @players.each do |player|
+        p << Player.new(@raters[player.obj].rate(tau), player.obj)
       end
       self.class.new(p)
     end
