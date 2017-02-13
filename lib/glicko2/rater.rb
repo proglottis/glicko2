@@ -19,7 +19,7 @@ module Glicko2
     # Rate calculates Rating as at the start of the following period based on game outcomes
     def rate(tau)
       v = @v_pre**-1
-      delta2 = @delta_pre**2
+      delta2 = (@delta_pre * v)**2
       sd2 = rating.sd**2
       a = Math.log(rating.volatility**2)
       if v.finite?
